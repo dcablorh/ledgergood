@@ -4,7 +4,7 @@ import { useTransactions } from '../contexts/TransactionContext';
 import { useAuth } from '../contexts/AuthContext';
 import TransactionModal from '../components/TransactionModal';
 
-const Transactions: React.FC = () => {
+  const Transactions: React.FC = () => {
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,7 +13,26 @@ const Transactions: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
 
-  const userPrefix = user?.email?.slice(0, 2) || user?.name?.slice(0, 2) || 'xx';
+  const userPrefix = (() => {
+  const name = user?.name?.trim();
+  const email = user?.email?.trim();
+  
+  if (name) {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    } else if (parts[0]) {
+      return parts[0][0].toUpperCase();
+    }
+  }
+
+  if (email) {
+    return email.slice(0, 2).toUpperCase();
+  }
+
+  return 'X';
+  })();
+
 
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());

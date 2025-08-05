@@ -56,11 +56,34 @@ router.get('/summary', async (req, res, next) => {
       }
     });
 
-    // Add user prefix to recent transactions
-    const recentWithPrefix = recentTransactions.map(transaction => ({
-      ...transaction,
-      userPrefix: transaction.user.email.slice(0, 2) || transaction.user.name.slice(0, 2)
-    }));
+   // Add user prefix to recent transactions
+  const recentWithPrefix = recentTransactions.map(transaction => {
+  const name = transaction.user.name?.trim();
+  const email = transaction.user.email || '';
+  let userPrefix = '';
+
+  if (name) {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      userPrefix = parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
+    } else if (parts.length === 1 && parts[0]) {
+      userPrefix = parts[0][0].toUpperCase();
+    }
+  }
+
+  // Fallback to email initials if name is missing or invalid
+  if (!userPrefix && email) {
+    userPrefix = email.slice(0, 2).toUpperCase();
+  }
+
+  return {
+    ...transaction,
+    userPrefix
+  };
+});
+
+
+
 
     res.json({
       summary: {

@@ -4,8 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('kb@urbanit.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +19,15 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid credentials. Try kb@urbanit.com / password or kt@urbanit.com / password');
+      const result = await login(email, password);
+
+      if (result?.error) {
+        setError(result.error || 'Invalid credentials.');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -30,22 +35,18 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      {/* Theme Toggle */}
       <button
-  onClick={() => {
-    const html = document.documentElement;
-    if (html.classList.contains('dark')) {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
-  }}
-  className="absolute top-6 right-6 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
->
-  <Moon className="w-6 h-6" />
-</button>
-
+        onClick={() => {
+          const html = document.documentElement;
+          const isDark = html.classList.contains('dark');
+          html.classList.toggle('dark');
+          localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        }}
+        className="absolute top-6 right-6 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+      >
+        <Moon className="w-6 h-6" />
+      </button>
 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
@@ -72,11 +73,10 @@ const Login: React.FC = () => {
               <input
                 type="email"
                 id="email"
-                name="email"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="kb@urbanit.com"
                 required
               />
@@ -90,11 +90,10 @@ const Login: React.FC = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
-                  name="password"
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="••••••••••"
                   required
                 />
@@ -119,7 +118,11 @@ const Login: React.FC = () => {
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">Don't have an account?</p>
-            <button type="button" onClick={() => navigate('/register')} className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors">
+            <button
+              type="button"
+              onClick={() => navigate('/register')}
+              className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
+            >
               Create new account
             </button>
           </div>

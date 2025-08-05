@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer
+} from 'recharts';
 import { Download, Calendar } from 'lucide-react';
 import { reportsAPI } from '../utils/api';
-import jsPDF from 'jspdf';
+import {generateFinancialReportPDF} from '../utils/exportPDF';
 
 const Reports: React.FC = () => {
   const [startDate, setStartDate] = useState('2025-01-01');
@@ -17,31 +29,25 @@ const Reports: React.FC = () => {
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  
-  // Load data from API
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
   const loadReportsData = async () => {
     try {
       setIsLoading(true);
-      
-      // Load summary data
       const summaryResponse = await reportsAPI.getSummary({
         startDate,
         endDate
       });
       setSummary(summaryResponse);
-      
-      // Load monthly data
+
       const monthlyResponse = await reportsAPI.getMonthly(selectedYear);
       setMonthlyData(monthlyResponse.monthlyData);
-      
-      // Load category data
+
       const categoryResponse = await reportsAPI.getCategory({
         startDate,
         endDate
       });
       setCategoryData(categoryResponse.categoryData);
-      
     } catch (error) {
       console.error('Failed to load reports data:', error);
     } finally {
@@ -49,44 +55,36 @@ const Reports: React.FC = () => {
     }
   };
 
-  // Load data on component mount and when filters change
   React.useEffect(() => {
     loadReportsData();
   }, [startDate, endDate, selectedYear]);
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    
-    doc.setFontSize(20);
-    doc.text('Financial Reports', 20, 30);
-    
-    doc.setFontSize(12);
-    doc.text(`Report Period: ${startDate} to ${endDate}`, 20, 50);
-    
-    doc.text(`Total Income: ₵${summary.totalIncome}`, 20, 70);
-    doc.text(`Total Expenditure: ₵${summary.totalExpenditure}`, 20, 85);
-    doc.text(`Net Balance: ₵${summary.netBalance}`, 20, 100);
-    
-    doc.save('financial-report.pdf');
-  };
-
   return (
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Financial Reports</h1>
-          <p className="text-gray-600 dark:text-gray-400">Analyze your cash flow and financial performance</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Analyze your cash flow and financial performance
+          </p>
         </div>
-        <button 
-          onClick={exportToPDF}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="w-5 h-5" />
-          Export CSV
-        </button>
+        <button
+  onClick={() =>
+    generateFinancialReportPDF({
+      businessName: 'Urban-IT',
+      startDate: startDate,
+      endDate: endDate,
+      transactions: transactions
+    })
+  }
+    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+    disabled={isLoading}>
+    <Download className="w-5 h-5" />
+     Export PDF
+      </button>
+
       </div>
 
       {/* Date Range Filter */}
@@ -94,7 +92,9 @@ const Reports: React.FC = () => {
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Filters</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Year for Monthly View</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Year for Monthly View
+            </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
@@ -106,7 +106,9 @@ const Reports: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Start Date
+            </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <input
@@ -118,7 +120,9 @@ const Reports: React.FC = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              End Date
+            </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <input
@@ -144,7 +148,11 @@ const Reports: React.FC = () => {
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 text-center">
           <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">Net Balance</h3>
-          <p className={`text-3xl font-bold ${summary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p
+            className={`text-3xl font-bold ${
+              summary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}
+          >
             ₵{summary.netBalance.toLocaleString()}
           </p>
         </div>
@@ -152,9 +160,10 @@ const Reports: React.FC = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Cash Flow */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Monthly Cash Flow ({selectedYear})</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+            Monthly Cash Flow ({selectedYear})
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={monthlyData} className="dark:text-white">
               <CartesianGrid strokeDasharray="3 3" />
@@ -168,9 +177,10 @@ const Reports: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Category Breakdown */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Category Breakdown</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+            Category Breakdown
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -193,11 +203,12 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Detailed Tables */}
+      {/* Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Cash Flow Details */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Monthly Cash Flow Details ({selectedYear})</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+            Monthly Cash Flow Details ({selectedYear})
+          </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -222,7 +233,6 @@ const Reports: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Breakdown Details */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Category Breakdown</h3>
           <div className="overflow-x-auto">
@@ -238,12 +248,31 @@ const Reports: React.FC = () => {
                 {categoryData.map((category, index) => (
                   <tr key={index} className="border-b border-gray-100 dark:border-gray-700">
                     <td className="py-2 text-gray-800 dark:text-white">{category.name}</td>
-                    <td className="py-2 text-gray-800 dark:text-white">₵{category.value.toLocaleString()}</td>
+                    <td className="py-2 text-gray-800 dark:text-white">
+                      ₵{category.value.toLocaleString()}
+                    </td>
                     <td className="py-2 text-gray-600 dark:text-gray-400">{category.percentage}%</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div className="bg-white p-10 rounded-xl shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Summary</h2>
+          <div className="prose max-w-none">
+            <p className="text-gray-700">
+              During this period, Urban-IT generated{' '}
+              <strong>₵{summary.totalIncome.toLocaleString()}</strong> in total revenue from{' '}
+              <strong>{summary.totalTransactions}</strong> transactions, with expenses totaling{' '}
+              <strong>₵{summary.totalExpenditure.toLocaleString()}</strong>, resulting in a net income of{' '}
+              <strong
+                className={summary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}
+              >
+                ₵{summary.netBalance.toLocaleString()}
+              </strong>
+            </p>
           </div>
         </div>
       </div>

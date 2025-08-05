@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { authAPI } from '../utils/api';
 
 const Register: React.FC = () => {
@@ -9,6 +8,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -17,16 +17,12 @@ const Register: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await authAPI.register( 
-        name,
-        email,
-        password
-      );
-
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
+      const response = await authAPI.register(name, email, password);
+      setSuccess('Registration successful! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 2000); // redirect after 2 seconds
     } catch (err: any) {
       const message = err.response?.data?.error || 'Registration failed';
       setError(message);
@@ -47,6 +43,12 @@ const Register: React.FC = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-sm">
+              {success}
             </div>
           )}
 

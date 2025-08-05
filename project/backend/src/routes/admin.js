@@ -61,15 +61,36 @@ router.get('/approved', async (req, res, next) => {
 });
 
 // DELETE /admin/approve/:id - Remove approved email
-router.delete('/approve/:id', async (req, res, next) => {
+// DELETE /admin/users/:id - Delete a user and remove from approved users
+router.delete('/users/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    await prisma.approvedUser.delete({
-      where: { id }
+    // Prevent admin from deleting themselves
+    if (id === req.user.id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    // Get the user to find their email
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { email: true }
     });
 
-    res.json({ message: 'Approved user removed successfully' });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete the user
+    await prisma.user.delete({ where: { id } });
+
+    // Also remove the email from approved_users table
+    await prisma.approvedUser.deleteMany({
+      where: { email: user.email }
+    });
+
+    res.json({ message: 'User and approved email removed successfully' });
+
   } catch (error) {
     next(error);
   }

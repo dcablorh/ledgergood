@@ -64,10 +64,29 @@ router.get('/', async (req, res, next) => {
     });
 
     // Add user prefix to each transaction
-    const transactionsWithPrefix = transactions.map(transaction => ({
-      ...transaction,
-      userPrefix: transaction.user.email.slice(0, 2) || transaction.user.name.slice(0, 2)
-    }));
+   const transactionsWithPrefix = transactions.map(transaction => {
+  const name = transaction.user.name?.trim();
+  let userPrefix = '';
+
+  if (name) {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      userPrefix = parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
+    } else if (parts[0]) {
+      userPrefix = parts[0][0].toUpperCase();
+    }
+  }
+
+  // Fallback to first 2 letters of email if name is missing or invalid
+  if (!userPrefix && transaction.user.email) {
+    userPrefix = transaction.user.email.slice(0, 2).toUpperCase();
+  }
+
+  return {
+    ...transaction,
+    userPrefix
+  };
+});
 
     res.json({ transactions: transactionsWithPrefix });
   } catch (error) {
